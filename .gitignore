@@ -1,4 +1,7 @@
 .claude
 .vscode
 .DS_Store
-
+GEMINI.md
+*.itf
+*.po
+lunar

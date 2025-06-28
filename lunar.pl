@@ -6,6 +6,9 @@
 % translate <https://github.com/kristopherjohnson/lunar-c/blob/master/lunar.c>
 % to Prolog.
 
+% Start the game when file is loaded
+:- initialization(lunar_lander).
+
 % Main entry point
 lunar_lander :-
     write('CONTROL CALLING LUNAR MODULE. MANUAL CONTROL IS NECESSARY'), nl,
@@ -54,7 +57,7 @@ game_loop(A, V, M, N, G, Z, L) :-
         on_the_moon(V, L, M, N)
     ;
         % Display current status
-        display_status(L, A, V, M, N, K),
+        display_status(L, A, V, M, N),
 
         % Get fuel rate input
         prompt_for_k(K),
@@ -64,7 +67,7 @@ game_loop(A, V, M, N, G, Z, L) :-
     ).
 
 % Write time, altitude, velocity, and fuel remaining.
-display_status(L, A, V, M, N, K) :-
+display_status(L, A, V, M, N) :-
     L_int is round(L),
     write(' '), write_rjust(L_int, 6),
     AltMiles is truncate(A),
@@ -124,9 +127,43 @@ precise_landing(A, V, M, G, Z, K, MaxT, NewA, NewV, NewM) :-
     (A =< 0 ->
         NewA = 0, NewV = V, NewM = M
     ;
-        % Calculate time to reach surface
-        TimeToSurface is 2 * A / (V + sqrt(V * V + 2 * A * (G - Z * K / M))),
-        (MaxT < TimeToSurface -> ActualT = MaxT ; ActualT = TimeToSurface),
+        % Calculate acceleration
+        Accel is G - Z * K / M,
+
+        % Calculate discriminant for quadratic formula: t = (-V +/- sqrt(D)) / Accel
+        Discriminant is V * V + 2 * A * Accel,
+
+        (Discriminant < 0 ->
+            % If discriminant is negative, lander is accelerating away or won't hit
+            % within this segment. Use MaxT.
+            ActualT = MaxT
+        ;
+            % Calculate TimeToSurface using the quadratic formula
+            % We need the positive root.
+            (Accel =:= 0 ->
+                % Constant velocity case
+                (V =:= 0 -> TimeToSurface = MaxT % Not moving, won't hit
+                ; TimeToSurface is -A / V % Time to hit if moving at constant V
+                )
+            ;
+                % General case with acceleration
+                Root1 is (-V + sqrt(Discriminant)) / Accel,
+                Root2 is (-V - sqrt(Discriminant)) / Accel,
+
+                % Choose the smallest positive root for TimeToSurface
+                (Root1 > 0, Root2 > 0 ->
+                    (Root1 < Root2 -> TimeToSurface = Root1 ; TimeToSurface = Root2)
+                ; Root1 > 0 ->
+                    TimeToSurface = Root1
+                ; Root2 > 0 ->
+                    TimeToSurface = Root2
+                ; % Both roots are negative or zero, meaning it won't hit or already passed
+                    TimeToSurface = MaxT
+                )
+            ),
+            % Ensure TimeToSurface does not exceed MaxT
+            (TimeToSurface > MaxT -> ActualT = MaxT ; ActualT = TimeToSurface)
+        ),
         apply_physics_simple(A, V, M, G, Z, K, ActualT, NewA, NewV, NewM)
     ).
 
@@ -142,7 +179,7 @@ apply_physics_simple(A, V, M, G, Z, K, T, NewA, NewV, NewM) :-
 
 % Handle fuel depletion
 fuel_out(A, V, G, L, M, N) :-
-    write('FUEL OUT AT '), write_float(L, 2), write(' SECS'), nl,
+    write('FUEL OUT AT '), write_fjust(L, 8, 2), write(' SECS'), nl,
     % Free fall calculation
     (A > 0 ->
         TimeToSurface is (sqrt(V * V + 2 * A * G) - V) / G,
@@ -156,11 +193,11 @@ fuel_out(A, V, G, L, M, N) :-
 
 % Handle moon landing
 on_the_moon(V, L, M, N) :-
-    write('ON THE MOON AT '), write_float(L, 2), write(' SECS'), nl,
+    write('ON THE MOON AT '), write_fjust(L, 8, 2), write(' SECS'), nl,
     ImpactVel is abs(3600 * V),
-    write('IMPACT VELOCITY OF '), write_float(ImpactVel, 2), write(' M.P.H.'), nl,
+    write('IMPACT VELOCITY OF '), write_fjust(ImpactVel, 8, 2), write(' M.P.H.'), nl,
     FuelLeft is M - N,
-    write('FUEL LEFT: '), write_float(FuelLeft, 2), write(' LBS'), nl,
+    write('FUEL LEFT: '), write_fjust(FuelLeft, 8, 2), write(' LBS'), nl,
 
     % Evaluate landing quality
     (ImpactVel =< 1 ->
@@ -262,7 +299,7 @@ write_float(Float, Precision) :-
 % get_float_codes(Float, Precision, Codes)
 % Convert a float to a list of character codes with a given precision.
 get_float_codes(Float, Precision, Codes) :-
-    Multiplier is round(10**Precision),
+    Multiplier is truncate(10**Precision),
     Value is round(Float * Multiplier),
     Integer is Value // Multiplier,
     Fractional is abs(Value mod Multiplier),
@@ -295,7 +332,3 @@ read_line_codes(C, [C|Cs]) :-
     C >= 0, % valid code
     get_code(NextC),
     read_line_codes(NextC, Cs).
-
-% Start the game when file is loaded
-:- initialization(lunar_lander).
-go :- lunar_lander.
