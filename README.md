@@ -11,7 +11,7 @@ It was simple, primitive even, but I was immediately fascinated with computers. 
 
 So after that I kept bugging my dad to buy me books about programming.  A couple of years later, my parents bought me a computer.  Thanks Mom and Dad!
 
-I did some research, and I found the [original Lunar Lander program by Jim Storer][storerlunarlander], written in the [FOCAL programming language][wpfocal] in 1969.  I've rewritten it in SWI-Prolog so that it can be run on modern systems with Prolog installed.  The program here is pretty close to what I remember.  One difference is that, on crashing into the moon surface, that program announced "IT'S ALL OVER BUT THE SHOUTING", which confused me as a ten-year-old.  I thought the shouting was for joy.
+I did some research, and I found the [original Lunar Lander program by Jim Storer][storerlunarlander], written in the [FOCAL programming language][wpfocal] in 1969.  I've rewritten it in Prolog so that it can be run on modern systems with Prolog installed.  The program here is pretty close to what I remember.  One difference is that, on crashing into the moon surface, that program announced "IT'S ALL OVER BUT THE SHOUTING", which confused me as a ten-year-old.  I thought the shouting was for joy.
 
 This code is based upon these sources:
 
@@ -34,29 +34,70 @@ swipl
 ?- [lunar].
 ```
 
-## Installing SWI-Prolog
+## Running with GNU Prolog
 
-### macOS
-
-If you have [Homebrew][homebrew] installed:
+If you have [GNU Prolog](http://gprolog.org/) installed, you can run the game by executing this command:
 
 ```
-brew install swi-prolog
+gprolog --consult-file lunar.pl
 ```
 
-### Ubuntu/Debian
+Alternatively, you can start GNU Prolog and then load the file:
 
 ```
-sudo apt-get install swi-prolog
+gprolog
+?- [lunar].
 ```
 
-### Windows
+### Compiling with GNU Prolog
 
-Download the installer from the [SWI-Prolog website][swiprolog].
+You can compile `lunar.pl` into a standalone executable using `gplc`:
 
-### Other Systems
+```
+gplc lunar.pl
+```
 
-See the [SWI-Prolog installation guide][swiplinstall] for other platforms.
+This will create an executable named `lunar` in the current directory, which you can then run directly:
+
+```
+./lunar
+```
+
+## Running with Ciao Prolog
+
+If you have [Ciao Prolog](https://ciao-lang.org/) installed, you can run the game by compiling and then executing it:
+
+```
+ciaoc -o lunar lunar.pl
+./lunar
+```
+
+Alternatively, you can interpret the file directly:
+
+```
+ciao run lunar.pl
+```
+
+Or, you can start the Ciao shell and then load the file:
+
+```
+ciao
+?- [lunar].
+```
+
+### Compiling with Ciao Prolog
+
+You can compile `lunar.pl` into a standalone executable using `ciaoc`:
+
+```
+ciaoc -o lunar lunar.pl
+```
+
+This will create an executable named `lunar` in the current directory, which you can then run directly:
+
+```
+./lunar
+```
 
 ## Example of Play
 
@@ -119,5 +160,4 @@ CONTROL OUT
 [storer]: http://www.cs.brandeis.edu/~storer/LunarLander/LunarLander/LunarLanderListing.jpg
 [storerlunarlander]: https://www.cs.brandeis.edu/~storer/LunarLander/LunarLander.html
 [swiprolog]: https://www.swi-prolog.org/
-[swiplinstall]: https://www.swi-prolog.org/Download.html
 [wpfocal]: https://en.wikipedia.org/wiki/FOCAL_(programming_language)
