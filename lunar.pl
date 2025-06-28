@@ -1,11 +1,10 @@
-% LUNAR LANDER GAME in SWI-Prolog
-% Translation of Jim Storer's FOCAL lunar lander game to Prolog
+% Translation of
+% <http://www.cs.brandeis.edu/~storer/LunarLander/LunarLander/LunarLanderListing.jpg>
+% by Jim Storer from FOCAL to C.
 
-% This translation was created by using Claude Code to translate
-% <https://github.com/kristopherjohnson/lunar-c/blob/master/lunar.c>
+% This translation was created by using Claude Code and Google Gemini to
+% translate <https://github.com/kristopherjohnson/lunar-c/blob/master/lunar.c>
 % to Prolog.
-
-:- use_module(library(readutil)).
 
 % Main entry point
 lunar_lander :-
@@ -32,7 +31,7 @@ play_game :-
     write('TIME,SECS   ALTITUDE,MILES+FEET   VELOCITY,MPH   FUEL,LBS   FUEL RATE'), nl,
 
     % Initialize game state
-    game_loop(120, 1, 32500, 16500, 0.001, 1.8, 0).
+    game_loop(120.0, 1.0, 32500.0, 16500.0, 0.001, 1.8, 0.0).
 
 % A - Altitude (miles)
 % G - Gravity
@@ -55,12 +54,7 @@ game_loop(A, V, M, N, G, Z, L) :-
         on_the_moon(V, L, M, N)
     ;
         % Display current status
-        AltMiles is truncate(A),
-        AltFeet is truncate(5280 * (A - AltMiles)),
-        VelMPH is 3600 * V,
-        FuelLbs is M - N,
-
-        format('~t~w~7|~t~w~23|~t~w~30|~t~2f~45|~t~1f~57|      ', [L, AltMiles, AltFeet, VelMPH, FuelLbs]),
+        display_status(L, A, V, M, N, K),
 
         % Get fuel rate input
         prompt_for_k(K),
@@ -68,6 +62,21 @@ game_loop(A, V, M, N, G, Z, L) :-
         % Process 10-second turn
         process_turn(A, V, M, N, G, Z, L, K)
     ).
+
+% Write time, altitude, velocity, and fuel remaining.
+display_status(L, A, V, M, N, K) :-
+    L_int is round(L),
+    write(' '), write_rjust(L_int, 6),
+    AltMiles is truncate(A),
+    AltFeet is truncate(5280 * (A - AltMiles)),
+    write(' '), write_rjust(AltMiles, 15),
+    write(' '), write_rjust(AltFeet, 6),
+    VelMPH is 3600 * V,
+    write(' '), write_fjust(VelMPH, 14, 2),
+    FuelLbs is M - N,
+    write(' '), write_fjust(FuelLbs, 11, 1),
+    write('      K=:'),
+    flush_output.
 
 % Process a single 10-second turn
 process_turn(A, V, M, N, G, Z, L, K) :-
@@ -80,7 +89,7 @@ process_turn(A, V, M, N, G, Z, L, K) :-
         FuelToUse is K * 10,
         (FuelToUse > FuelRemaining ->
             % Partial burn - use all remaining fuel
-            BurnTime is FuelRemaining / K,
+            (K > 0 -> BurnTime is FuelRemaining / K ; BurnTime is 0),
             apply_physics(A, V, M, G, Z, K, BurnTime, NewA, NewV, NewM),
             NewL is L + BurnTime,
             fuel_out(NewA, NewV, G, NewL, NewM, N)
@@ -117,14 +126,14 @@ precise_landing(A, V, M, G, Z, K, MaxT, NewA, NewV, NewM) :-
     ;
         % Calculate time to reach surface
         TimeToSurface is 2 * A / (V + sqrt(V * V + 2 * A * (G - Z * K / M))),
-        ActualT is min(MaxT, TimeToSurface),
+        (MaxT < TimeToSurface -> ActualT = MaxT ; ActualT = TimeToSurface),
         apply_physics_simple(A, V, M, G, Z, K, ActualT, NewA, NewV, NewM)
     ).
 
 % Simplified physics for very short time periods
 apply_physics_simple(A, V, M, G, Z, K, T, NewA, NewV, NewM) :-
     AccelGrav is G,
-    AccelThrust is -Z * K / M,
+    (M =< 0 -> AccelThrust = 0 ; AccelThrust is -Z * K / M),
     TotalAccel is AccelGrav + AccelThrust,
 
     NewV is V + TotalAccel * T,
@@ -133,7 +142,7 @@ apply_physics_simple(A, V, M, G, Z, K, T, NewA, NewV, NewM) :-
 
 % Handle fuel depletion
 fuel_out(A, V, G, L, M, N) :-
-    format('FUEL OUT AT ~2f SECS~n', [L]),
+    write('FUEL OUT AT '), write_float(L, 2), write(' SECS'), nl,
     % Free fall calculation
     (A > 0 ->
         TimeToSurface is (sqrt(V * V + 2 * A * G) - V) / G,
@@ -147,11 +156,11 @@ fuel_out(A, V, G, L, M, N) :-
 
 % Handle moon landing
 on_the_moon(V, L, M, N) :-
-    format('ON THE MOON AT ~2f SECS~n', [L]),
+    write('ON THE MOON AT '), write_float(L, 2), write(' SECS'), nl,
     ImpactVel is abs(3600 * V),
-    format('IMPACT VELOCITY OF ~2f M.P.H.~n', [ImpactVel]),
+    write('IMPACT VELOCITY OF '), write_float(ImpactVel, 2), write(' M.P.H.'), nl,
     FuelLeft is M - N,
-    format('FUEL LEFT: ~2f LBS~n', [FuelLeft]),
+    write('FUEL LEFT: '), write_float(FuelLeft, 2), write(' LBS'), nl,
 
     % Evaluate landing quality
     (ImpactVel =< 1 ->
@@ -167,39 +176,27 @@ on_the_moon(V, L, M, N) :-
     ;
         write('SORRY,BUT THERE WERE NO SURVIVORS-YOU BLEW IT!'), nl,
         CraterDepth is ImpactVel * 0.277777,
-        format('IN FACT YOU BLASTED A NEW LUNAR CRATER ~2f FT. DEEP~n', [CraterDepth])
+        write('IN FACT YOU BLASTED A NEW LUNAR CRATER '), write_float(CraterDepth, 2), write(' FT. DEEP'), nl
     ), nl.
 
 % Prompt for fuel rate with validation
 prompt_for_k(K) :-
-    write('K=:'),
-    read_line_to_string(user_input, Line),
-    % Remove trailing newline if present
-    (sub_string(Line, _, 1, 0, '\n') ->
-        sub_string(Line, 0, _, 1, CleanLine)
-    ;
-        CleanLine = Line
-    ),
-    (CleanLine = "" ->
-        % Empty line, prompt again
-        write('NOT POSSIBLE'),
+    read_line(Codes),
+    ( Codes = [] ->
+        write('NOT POSSIBLE'), nl,
         write_dots(51),
         prompt_for_k(K)
     ;
-        catch(
-            (number_string(K, CleanLine),
-             (K >= 0, (K =:= 0; (K >= 8, K =< 200)) ->
-                 true
-             ;
-                 fail
-             )
-            ),
-            _,
-            fail
-        ) ->
+      catch(
+          ( number_codes(K, Codes),
+            (K >= 0, (K =:= 0; (K >= 8, K =< 200)))
+          ),
+          _,
+          fail
+      ) ->
         true
     ;
-        write('NOT POSSIBLE'),
+        write('NOT POSSIBLE'), nl,
         write_dots(51),
         prompt_for_k(K)
     ).
@@ -214,21 +211,91 @@ write_dots(N) :-
 
 % Accept yes/no input
 accept_yes_or_no(Answer) :-
-    write('(ANS. YES OR NO):'),
-    read_line_to_string(user_input, Line),
-    (Line = "" ->
+    write('(ANS. YES OR NO):'), flush_output,
+    read_line(Codes),
+    ( Codes = [] ->
         accept_yes_or_no(Answer)
     ;
-        string_chars(Line, [First|_]),
-        char_code(First, Code),
-        (memberchk(Code, [89, 121]) ->  % 'Y' or 'y'
+        Codes = [First|_],
+        ( member(First, [89, 121]) -> % 'Y' or 'y'
             Answer = yes
-        ; memberchk(Code, [78, 110]) ->  % 'N' or 'n'
+        ; member(First, [78, 110]) -> % 'N' or 'n'
             Answer = no
         ;
             accept_yes_or_no(Answer)
         )
     ).
 
+% Helper to write spaces
+write_spaces(0) :- !.
+write_spaces(N) :-
+    N > 0,
+    write(' '),
+    N1 is N - 1,
+    write_spaces(N1).
+
+% write_rjust(N, W)
+% Write integer N right-justified in a field of W characters.
+write_rjust(N, W) :-
+    number_codes(N, Codes),
+    length(Codes, Len),
+    Padding is W - Len,
+    ( Padding > 0 -> write_spaces(Padding) ; true ),
+    write(N).
+
+% write_fjust(Float, Width, Precision)
+% Write float Float right-justified in a field of Width characters,
+% with Precision digits after the decimal point.
+write_fjust(Float, Width, Precision) :-
+    get_float_codes(Float, Precision, Codes),
+    length(Codes, Len),
+    Padding is Width - Len,
+    ( Padding > 0 -> write_spaces(Padding) ; true ),
+    forall(member(Code, Codes), put_code(Code)).
+
+% write_float(Float, Precision)
+% Write float Float with Precision digits after the decimal point.
+write_float(Float, Precision) :-
+    get_float_codes(Float, Precision, Codes),
+    forall(member(Code, Codes), put_code(Code)).
+
+% get_float_codes(Float, Precision, Codes)
+% Convert a float to a list of character codes with a given precision.
+get_float_codes(Float, Precision, Codes) :-
+    Multiplier is round(10**Precision),
+    Value is round(Float * Multiplier),
+    Integer is Value // Multiplier,
+    Fractional is abs(Value mod Multiplier),
+    number_codes(Integer, IntegerCodes),
+    ( Precision > 0 ->
+        number_codes(Fractional, FracCodesRaw),
+        length(FracCodesRaw, FracLen),
+        NumZeros is Precision - FracLen,
+        ( NumZeros > 0 ->
+            findall(0'0, between(1, NumZeros, _), Zeros),
+            append(Zeros, FracCodesRaw, FracCodesPadded)
+        ;
+            FracCodesPadded = FracCodesRaw
+        ),
+        append(IntegerCodes, [0'.|FracCodesPadded], Codes)
+    ;
+        Codes = IntegerCodes
+    ).
+
+% Read a line of character codes from input
+read_line(Codes) :-
+    get_code(C),
+    read_line_codes(C, Codes).
+
+read_line_codes(-1, []) :- !.
+read_line_codes(10, []) :- !.
+read_line_codes(13, []) :- get_code(10), !. % CR LF
+read_line_codes(13, []) :- !. % CR
+read_line_codes(C, [C|Cs]) :-
+    C >= 0, % valid code
+    get_code(NextC),
+    read_line_codes(NextC, Cs).
+
 % Start the game when file is loaded
 :- initialization(lunar_lander).
+go :- lunar_lander.
