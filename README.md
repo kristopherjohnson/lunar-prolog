@@ -1,7 +1,7 @@
 LUNAR for SWI-Prolog
 ===================
 
-This is a port of a classic text-based ["lunar lander" game][lunarlander] to [SWI-Prolog][swiprolog].
+This is a port of a classic text-based ["lunar lander" game][lunarlander] to [Prolog][prolog].
 
 The first time I saw a computer was when my father took me to an open-house at the IBM headquarters in Atlanta in the late 1970's, when I was around ten years old.  I wasn't impressed with the big sterile glass rooms filled with big orange computers, but there was a room in the basement where a couple of bearded guys asked me to sit down at a terminal and play a game.
 
@@ -65,14 +65,7 @@ This will create an executable named `lunar` in the current directory, which you
 
 ## Running with Ciao Prolog
 
-If you have [Ciao Prolog](https://ciao-lang.org/) installed, you can run the game by compiling and then executing it:
-
-```
-ciaoc -o lunar lunar.pl
-./lunar
-```
-
-Alternatively, you can interpret the file directly:
+If you have [Ciao Prolog](https://ciao-lang.org/) installed, you can run the game by executing this command:
 
 ```
 ciao run lunar.pl
@@ -161,3 +154,4 @@ CONTROL OUT
 [storerlunarlander]: https://www.cs.brandeis.edu/~storer/LunarLander/LunarLander.html
 [swiprolog]: https://www.swi-prolog.org/
 [wpfocal]: https://en.wikipedia.org/wiki/FOCAL_(programming_language)
+[prolog]: https://en.wikipedia.org/wiki/Prolog
