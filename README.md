@@ -1,5 +1,5 @@
-LUNAR for SWI-Prolog
-===================
+LUNAR for Prolog
+================
 
 This is a port of a classic text-based ["lunar lander" game][lunarlander] to [Prolog][prolog].
 
