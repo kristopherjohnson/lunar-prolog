@@ -1,6 +1,6 @@
 % Translation of
 % <http://www.cs.brandeis.edu/~storer/LunarLander/LunarLander/LunarLanderListing.jpg>
-% by Jim Storer from FOCAL to C.
+% by Jim Storer from FOCAL to Prolog.
 
 % This translation was created by using Claude Code and Google Gemini to
 % translate <https://github.com/kristopherjohnson/lunar-c/blob/master/lunar.c>
